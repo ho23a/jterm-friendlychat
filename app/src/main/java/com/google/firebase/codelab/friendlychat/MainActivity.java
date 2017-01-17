@@ -217,7 +217,7 @@ public class MainActivity extends AppCompatActivity
                         int messageCount = mFirebaseAdapter.getItemCount();
                         int lastVisiblePosition = mLinearLayoutManager.findLastCompletelyVisibleItemPosition();
                         if (lastVisiblePosition == -1 ||
-                                (positionStart >= (messageCount - 1) && lastVisiblePosition == positionStart)) {
+                                (positionStart >= (messageCount - 1) && lastVisiblePosition == positionStart - 1)) {
                             mMessageRecyclerView.scrollToPosition(positionStart);
                         }
                     }

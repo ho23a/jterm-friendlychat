@@ -110,7 +110,7 @@ public class SignInActivity extends AppCompatActivity implements
     private void firebaseAuthWithGoogle(GoogleSignInAccount account) {
         // Log.d: debug, data
         Log.d(TAG, String.format("firebaseAuthWithGoogle: %s", account.getId()));
-        AuthCredential credential = GoogleAuthProvider.getCredential(account.getId(), null);
+        AuthCredential credential = GoogleAuthProvider.getCredential(account.getIdToken(), null);
         mFirebaseAuth.signInWithCredential(credential).addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
             @Override
             public void onComplete(@NonNull Task<AuthResult> task) {
