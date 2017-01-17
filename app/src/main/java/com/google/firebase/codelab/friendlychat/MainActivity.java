@@ -106,6 +106,8 @@ public class MainActivity extends AppCompatActivity
     // Firebase instance variables
     private FirebaseAuth mFirebaseAuth;
     private FirebaseUser mFirebaseUser;
+    private DatabaseReference mFirebaseDatabaseReference;
+    private FirebaseRecyclerAdapter<FriendlyMessage, MessageViewHolder> mFirebaseAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -140,7 +142,7 @@ public class MainActivity extends AppCompatActivity
         mLinearLayoutManager.setStackFromEnd(true);
         mMessageRecyclerView.setLayoutManager(mLinearLayoutManager);
 
-        mProgressBar.setVisibility(ProgressBar.INVISIBLE);
+        configureFirebaseAdapter();
 
         mMessageEditText = (EditText) findViewById(R.id.messageEditText);
         mMessageEditText.setFilters(new InputFilter[]{new InputFilter.LengthFilter(mSharedPreferences
@@ -169,8 +171,59 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onClick(View view) {
                 // Send messages on click.
+                FriendlyMessage message = new FriendlyMessage(
+                        mMessageEditText.getText().toString(),
+                        mUsername, mPhotoUrl
+                );
+
+                mFirebaseDatabaseReference.child(MESSAGES_CHILD).push().setValue(message);
+                mMessageEditText.setText("");
             }
         });
+    }
+
+    private void configureFirebaseAdapter() {
+        mFirebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
+        mFirebaseAdapter = new FirebaseRecyclerAdapter<FriendlyMessage, MessageViewHolder>(
+                FriendlyMessage.class,
+                R.layout.item_message,
+                MessageViewHolder.class,
+                mFirebaseDatabaseReference.child(MESSAGES_CHILD)
+        ) {
+            @Override
+            protected void populateViewHolder(MessageViewHolder viewHolder, FriendlyMessage model, int position) {
+                mProgressBar.setVisibility(ProgressBar.INVISIBLE);
+                viewHolder.messageTextView.setText(model.getText()); // text message
+                viewHolder.messengerTextView.setText(model.getName()); // messenger
+
+                if (model.getPhotoUrl() == null) {
+                    viewHolder.messengerImageView.
+                            setImageResource(
+                                    R.drawable.ic_account_circle_black_36dp);
+                } else {
+                    Glide.with(MainActivity.this)
+                            .load(model.getPhotoUrl())
+                            .into(viewHolder.messengerImageView);
+                }
+            }
+        };
+
+        mFirebaseAdapter.registerAdapterDataObserver(
+                new RecyclerView.AdapterDataObserver() {
+                    @Override
+                    public void onItemRangeInserted(int positionStart, int itemCount) {
+                        super.onItemRangeInserted(positionStart, itemCount);
+
+                        int messageCount = mFirebaseAdapter.getItemCount();
+                        int lastVisiblePosition = mLinearLayoutManager.findLastCompletelyVisibleItemPosition();
+                        if (lastVisiblePosition == -1 ||
+                                (positionStart >= (messageCount - 1) && lastVisiblePosition == positionStart)) {
+                            mMessageRecyclerView.scrollToPosition(positionStart);
+                        }
+                    }
+                });
+        mMessageRecyclerView.setLayoutManager(mLinearLayoutManager);
+        mMessageRecyclerView.setAdapter(mFirebaseAdapter);
     }
 
     @Override
